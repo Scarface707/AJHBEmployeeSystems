@@ -419,14 +419,14 @@
 <script>
 // Credenciales simples (como login.html)
 const validCredentials = {
-    'montanaGerenteTI@ajhb.com': 'montanagerente23',
-    'hidalgoDirectorEj@ajhb.com': 'Directorejecutivo45',
-    'vargasGerenteVentas@ajhb.com': 'vargasGerenteVentas65',
-    'arreondoAsesor@ajhb.com': 'arreondoAsesor1',
-    'SurySecretatia@ajhb.com': 'SurySecretaria11',
-    'MontoyaAsesor@ajhb.com': 'montoyaAsesor34',
-    'jorgeAsesor@ajhb.com': 'jorgeAsesor56',
-    'yasserAsesor@ajhb.com': 'yasserAsesor38'
+    'GerenteTIMontana@ajhb.com': 'montanagerenteTI1',
+    'DirectorEjecutivoHidalgo@ajhb.com': 'DirectorEjecutivo1',
+    'VargasGerenteVentas34@ajhb.com': 'VargasGerenteVentas34',
+    'ArreondoAsesor054@ajhb.com': 'ArreondoAsesor98',
+    'AsistenciaGeneral@ajhb.com': 'SuryPrincipal13',
+    'AsesorMontoya00@ajhb.com': 'AsesorMontoya56',
+    'AsesorGorge098@ajhb.com': 'AsesorGorge23',
+    'AsesorYasser087@ajhb.com': 'AsesorYasser45'
 };
 
 // Sistema de neuronas animadas
@@ -575,17 +575,46 @@ function login() {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
     
+    // Definir información de roles para mostrar en el login (usando los roles reales del email)
+    const userRoles = {
+        'GerenteTIMontana@ajhb.com': { name: 'Montana', role: 'Gerente TI' },
+        'DirectorEjecutivoHidalgo@ajhb.com': { name: 'Hidalgo', role: 'Director Ejecutivo' },
+        'VargasGerenteVentas34@ajhb.com': { name: 'Vargas', role: 'Gerente de Ventas' },
+        'ArreondoAsesor054@ajhb.com': { name: 'Arreondo', role: 'Asesor' },
+        'AsistenciaGeneral@ajhb.com': { name: 'Asistencia General', role: 'Asistente General' },
+        'AsesorMontoya00@ajhb.com': { name: 'Montoya', role: 'Asesor' },
+        'AsesorGorge098@ajhb.com': { name: 'Jorge', role: 'Asesor' },
+        'AsesorYasser087@ajhb.com': { name: 'Yasser', role: 'Asesor' }
+    };
+    
     if (validCredentials[username] && validCredentials[username] === password) {
+        const userInfo = userRoles[username];
+        
+        // Mostrar notificación de éxito con información del usuario
+        showNotification(
+            'success',
+            '¡Acceso Autorizado!',
+            `Bienvenido ${userInfo.name} - ${userInfo.role}`
+        );
+        
         // Guardar sesión para DepVentas
         sessionStorage.setItem('vsystems_authenticated', 'true');
         sessionStorage.setItem('vsystems_token', 'token_' + Date.now());
         sessionStorage.setItem('vsystems_auth_time', Date.now().toString());
         sessionStorage.setItem('vsystems_user', username);
+        sessionStorage.setItem('vsystems_user_name', userInfo.name);
+        sessionStorage.setItem('vsystems_user_role', userInfo.role);
         
-        // Redirigir al dashboard
-        window.location.href = 'DepVentas.html';
+        // Redirigir al dashboard después de un momento
+        setTimeout(() => {
+            window.location.href = 'DepVentas.html';
+        }, 2000);
     } else {
-        alert('Usuario o contraseña incorrectos');
+        showNotification(
+            'error',
+            'Acceso Denegado',
+            'Usuario o contraseña incorrectos. Verifique sus credenciales.'
+        );
     }
 }
 
@@ -639,4 +668,3 @@ async function sendMessage(){
 </script>
 </body>
 </html>
-
