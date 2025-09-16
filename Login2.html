@@ -109,7 +109,7 @@
         </div>
     </div>
 <script>
-// CREDENCIALES SIN CIFRADO
+// CREDENCIALES SIN CIFRADO PARA EVITAR ERRORES DE LÓGICA
 const validCredentials = {
     'MontanaGerente@AJHB.com': 'Montana2025ajhb1',
     'MontoyaAgente@AJHB.com': 'Montoya2025ajhb2',
@@ -127,7 +127,7 @@ function login(){
     const pass = document.getElementById('password').value;
     
     if (!user || !pass) {
-        showNotification('warning', 'Campos Incompletos', 'Por favor complete todos los campos requeridos');
+        showNotification('warning', 'Campos Incompletos', 'Por favor, complete todos los campos.');
         return;
     }
     
@@ -135,7 +135,7 @@ function login(){
         showNotification('success', '¡Acceso Autorizado!', `Bienvenido ${user.split('@')[0]} al Departamento de Ventas`);
         window.location.href = 'DepVentas.html';
     } else {
-        showNotification('error', 'Acceso Denegado', 'Credenciales incorrectas para acceso a módulos');
+        showNotification('error', 'Acceso Denegado', 'Credenciales incorrectas. Por favor, intente de nuevo.');
         document.getElementById('password').value = '';
         const loginContainer = document.getElementById('loginContainer');
         loginContainer.style.animation = 'shake 0.5s ease-in-out';
