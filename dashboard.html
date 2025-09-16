@@ -1,0 +1,536 @@
+<!DOCTYPE html>  <html lang="es">  
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- TailwindCSS CDN para responsividad automática -->
+<link rel="stylesheet" href="assets/ajhb-system.css">
+<title>Dashboard - AJHB Employee System</title>  
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">  <!-- Leaflet (mapa) -->  <link  
+  rel="stylesheet"  
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"  
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="  
+  crossorigin=""  
+/>  
+<script  
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"  
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="  
+  crossorigin=""  
+></script>  <style>  
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins', sans-serif; }  
+html, body { width:100%; min-height:100%; background:#0a0f1a; overflow-x:hidden; }
+#neuronCanvas { position:absolute; top:0; left:0; width:100%; height:100%; z-index:0; }  
+  
+/* Barra superior */  
+.top-bar {  
+    position:fixed; top:0; left:0; width:100%; height:38px;  
+    background: rgba(0,0,0,0.45); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);  
+    display:flex; justify-content:space-between; align-items:center;  
+    padding:0 12px; color:#fff; z-index:10; font-size:0.8em;  
+}  
+.time-date { display:flex; flex-direction:column; align-items:flex-start; }  
+.time-date .time { font-size:1em; font-weight:600; }  
+.time-date .date { font-size:0.7em; color:#ccc; }  
+.weather { display:flex; align-items:center; font-size:0.75em; }  
+.weather img { width:20px; height:20px; margin-right:4px; }  
+  
+/* Dashboard container */  
+.dashboard-container {  
+    position:relative; z-index:1;  
+    width:95%; max-width:1200px;  
+    margin:auto; margin-top:50px;  
+    text-align:center; color:#fff;  
+}  
+.dashboard-container h1 {  
+    font-size:1.5em; letter-spacing:1px;  
+    color:#00ffa3; margin-bottom:5px;  
+    animation: neonPulse 2s infinite alternate;  
+    text-shadow: 0 0 5px #00ffa3,0 0 15px #00ffa3,0 0 25px #00ffa3;  
+}  
+.dashboard-container h2 {  
+    font-size:0.95em; font-weight:600; margin-bottom:15px;  
+    background: linear-gradient(90deg,#00ffa3,#26ff7f,#00ffa3);  
+    background-size:200% 100%; -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;  
+    animation: shimmer 3s infinite linear;  
+}  
+@keyframes shimmer { 0%{background-position:-200% 0;} 100%{background-position:200% 0;} }  
+@keyframes neonPulse { 0%{text-shadow:0 0 5px #00ffa3,0 0 12px #00ffa3;} 50%{text-shadow:0 0 8px #00ffa3,0 0 20px #00ffa3;} 100%{text-shadow:0 0 5px #00ffa3,0 0 12px #00ffa3;} }  
+  
+/* Cuadro de botones */  
+.button-box {  
+    max-width:520px; margin:auto;  
+    background: rgba(0,0,0,0.35); border-radius:18px; padding:12px;  
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);  
+    border:1px solid rgba(0,255,163,0.25); box-shadow:0 0 20px rgba(0,255,163,0.25);  
+    max-height:200px; overflow-y:auto;  
+}  
+.access-grid {  
+    display:grid; grid-template-columns: repeat(2, 1fr); gap:11px; justify-items:center;  
+}  
+.access-card {  
+    width:100%; max-width:240px; height:90px;  
+    background: rgba(0,0,0,0.25); border-radius:15px; padding:10px;  
+    border:1px solid rgba(0,255,163,0.25); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);  
+    box-shadow:0 0 15px rgba(0,255,163,0.25);  
+    transition: transform 0.3s ease, box-shadow 0.3s ease;  
+    cursor:pointer; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative;  
+}  
+.access-card:hover { transform: translateY(-3px) scale(1.03); box-shadow:0 0 25px rgba(0,255,163,0.55); }  
+.access-card h3 { font-size:0.95em; color:#26ff7f; text-align:center; }  
+.access-card a { text-decoration:none; color:inherit; display:block; width:100%; height:100%; }  
+.access-card::before {  
+    content:""; position:absolute; top:0; left:0; width:100%; height:100%;  
+    border-radius:15px; background: linear-gradient(120deg, #00ffa3, #26ff7f, #00ffa3);  
+    opacity:0; transition:0.4s; z-index:-1;  
+}  
+.access-card:hover::before { opacity:0.15; }  
+  
+/* Contenedor de mapa */  
+.map-box {  
+    max-width:520px; margin:14px auto 50px auto;  
+    background: rgba(0,0,0,0.35); border-radius:18px; padding:12px;  
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);  
+    border:1px solid rgba(0,255,163,0.25);  
+    box-shadow:0 0 20px rgba(0,255,163,0.25);  
+}  
+.map-header { display:flex; align-items:center; justify-content:space-between; font-size:0.9em; color:#26ff7f; margin-bottom:8px; }  
+.map-chip { font-family:'Roboto Mono',monospace; padding:3px 8px; border-radius:999px; border:1px solid rgba(0,255,163,.25); background:rgba(0,255,163,.08); }  
+#crMap { width:100%; height:240px; border-radius:14px; overflow:hidden; outline:1px solid rgba(0,255,163,.18); }  
+  
+/* Media Queries */  
+@media (max-width: 992px) { .access-grid { grid-template-columns: 1fr 1fr; gap:10px; } }  
+@media (max-width: 600px) { .dashboard-container { margin-top:45px; } .access-card { height:80px; padding:8px; } #crMap{height:220px;} }  
+  
+/* --- Secciones adicionales --- */  
+.info-box, .faq-box, .news-box {  
+    max-width:520px; margin:14px auto 24px auto; background: rgba(0,0,0,0.4); border-radius:18px;  
+    padding:16px; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);  
+    border:1px solid rgba(0,255,163,0.25); box-shadow:0 0 25px rgba(0,255,163,0.35);  
+    color:#fff; text-align:left; font-size:0.85em;  
+}  
+.info-box h3, .faq-box h3, .news-box h3 { color:#00ffa3; margin-bottom:10px; font-size:1.05em; text-shadow:0 0 5px #00ffa3; }  
+.info-box ul { list-style:none; padding-left:0; }  
+.info-box ul li { margin-bottom:6px; }  
+  
+details { margin-bottom:8px; cursor:pointer; border:1px solid rgba(0,255,163,0.15); border-radius:12px; padding:8px 12px; transition: all 0.3s ease; background: rgba(0,255,163,0.05); }  
+details[open] { background: rgba(0,255,163,0.1); box-shadow:0 0 15px rgba(0,255,163,0.2); }  
+details summary { font-weight:600; color:#26ff7f; text-shadow:0 0 3px #26ff7f; outline:none; }  
+details summary {
+    font-weight:600;
+    color:#26ff7f;
+    text-shadow:0 0 3px #26ff7f;
+    outline:none;
+    cursor:pointer;
+    background:rgba(0,255,163,0.08);
+    border-radius:8px;
+    padding:4px 10px;
+    transition:background 0.2s;
+}
+details summary:hover {
+    background:rgba(0,255,163,0.18);
+}
+details p { margin-top:6px; margin-left:6px; font-size:0.8em; }  
+  
+.news-carousel { display:flex; overflow-x:auto; gap:12px; padding-bottom:8px; }  
+.news-card {  
+    min-width:160px; background: rgba(0,0,0,0.25); border-radius:14px; padding:12px;  
+    text-align:center; border:1px solid rgba(0,255,163,0.25);  
+    box-shadow:0 0 15px rgba(0,255,163,0.25); flex-shrink:0; transition: transform 0.3s ease;  
+}  
+.news-card:hover { transform: scale(1.05); box-shadow:0 0 25px rgba(0,255,163,0.45); }  
+  
+</style>  </head>  
+<body>  <canvas id="neuronCanvas"></canvas>
+
+<!-- Barra superior -->  <div class="top-bar">  
+    <div class="time-date">  
+        <div class="time" id="time">00:00</div>  
+        <div class="date" id="date">01 Ene 2025</div>  
+    </div>  
+    <div class="weather" id="weather">  
+        <img src="https://openweathermap.org/img/wn/01d.png" alt="Clima">  
+        <span id="weather-text">25°C Sunny</span>  
+    </div>  
+</div>  <div class="dashboard-container">  
+    <h1>AJHB Employee System</h1>  
+        <h2>Panel De Control Empresarial</h2>
+        <div class="button-box">
+            <!-- INICIO BLOQUE 10 BOTONES PRINCIPALES -->
+            <div class="access-grid">  
+                <div class="access-card"><a href="Login2.html"><h3>💼 Dep. Ventas</h3></a></div>  
+                <div class="access-card"><a href="asesor.html"><h3>🎯 Dep. Comercial</h3></a></div>  
+                <div class="access-card"><a href="Junta Administrativa.html"><h3>📋 Administraciones</h3></a></div>  
+                <div class="access-card"><a href="reuniones.html"><h3>🤝 Sala de Juntas</h3></a></div>  
+                <div class="access-card"><a href="Contadores Generales.html"><h3>📊 Dep. Contable</h3></a></div>  
+                <div class="access-card"><a href="asistente Administrativo.html"><h3>📁 Secretaría</h3></a></div>  
+                <div class="access-card"><a href="emergency.html"><h3>⚡ Gerencia General</h3></a></div>  
+                <div class="access-card"><a href="grupoTI.html"><h3>⚙️ Dep. IT</h3></a></div>  
+                <div class="access-card"><a href="franquiciados.html"><h3>🏢 Socios Comerciales</h3></a></div>  
+                <div class="access-card"><a href="chat.html"><h3>💬 Centro de Mensajes</h3></a></div>  
+            </div>
+            <!-- FIN BLOQUE 10 BOTONES PRINCIPALES -->
+        </div>
+
+<!-- Mapa interactivo -->  
+<div class="map-box">  
+    <div class="map-header">  
+        <span>Vista satelital • Costa Rica</span>  
+        <span class="map-chip">Interactivo</span>  
+    </div>  
+    <div id="crMap"></div>  
+</div>  
+
+<!-- Secciones adicionales -->  
+
+<div class="info-box">  
+    <h3>📜 Políticas y Condiciones</h3>  
+    <div>  
+        <p>El uso de esta plataforma implica la aceptación de nuestras políticas internas de seguridad y privacidad. Lea atentamente y consulte a su supervisor si tiene dudas.</p>  
+        <ul>  
+            <li>🔒 Mantener la confidencialidad de toda la información interna.</li>  
+            <li>🛡️ No compartir credenciales ni contraseñas con terceros.</li>  
+            <li>💻 El acceso es exclusivo para personal autorizado.</li>  
+            <li>📌 Revisar periódicamente las actualizaciones de políticas.</li>  
+            <li>⚠️ Cumplir con las normativas y procedimientos internos.</li>  
+            <li>� Reportar cualquier actividad sospechosa al área de TI.</li>
+            <li>🔄 Cerrar sesión al finalizar su jornada laboral.</li>
+            <li>📵 No instalar software no autorizado en los equipos de la empresa.</li>
+            <li>📝 Utilizar los recursos tecnológicos de acuerdo a las políticas establecidas.</li>
+        </ul>  
+    </div>  
+</div>
+
+<div class="info-box">  
+    <h3>🛡️ Buenas Prácticas de Seguridad</h3>  
+    <div>  
+        <ul>  
+            <li>🚫 No abra correos ni enlaces sospechosos.</li>  
+            <li>🔍 Verifique siempre la autenticidad de los remitentes.</li>  
+            <li>🖥️ Bloquee su equipo si se ausenta de su lugar de trabajo.</li>  
+            <li>📞 Ante incidentes, comuníquese de inmediato con soporte técnico.</li>  
+        </ul>  
+    </div>  
+</div>
+
+
+<div class="faq-box">  
+    <h3>❓ Preguntas Frecuentes</h3>  
+    <details>  
+        <summary>¿Cómo inicio sesión en el sistema?</summary>  
+        <p>Use su usuario y contraseña corporativa provista por TI.</p>  
+    </details>  
+    <details>  
+        <summary>¿Cómo reporto un error?</summary>  
+        <p>Use el formulario de soporte interno o contacte al equipo de TI.</p>  
+    </details>  
+    <details>  
+        <summary>¿Se puede acceder desde dispositivos móviles?</summary>  
+        <p>Sí, el sistema es responsive y funciona en smartphones y tablets.</p>  
+    </details>  
+    <details>
+        <summary>¿Qué hago si olvido cerrar sesión?</summary>
+        <p>Contacte a TI para cerrar su sesión de forma remota y cambie su contraseña.</p>
+    </details>
+    <details>
+        <summary>¿Que hago si olvido mi contraseña?</summary>
+        <p>Contacte a soporte tecnico para recuperacion de dicha contraseña</p>
+        </details>
+
+    <!-- Eliminado bloque erróneo de clima dentro de FAQ -->
+</div>
+
+<div class="info-box">
+    <h3>💡 Consejos de Productividad</h3>
+    <ul>
+        <li>Organice su día con una lista de tareas claras.</li>
+        <li>Priorice actividades importantes y urgentes.</li>
+        <li>Evite distracciones y mantenga su espacio de trabajo ordenado.</li>
+        <li>Realice pausas cortas para mejorar el enfoque.</li>
+        <li>Revise sus objetivos al final de la jornada.</li>
+    </ul>
+</div>
+
+<div class="info-box">
+    <h3>📢 Recordatorios de Cumplimiento</h3>
+    <ul>
+        <li>Revise los comunicados internos semanalmente.</li>
+        <li>Participe en las capacitaciones obligatorias.</li>
+        <li>Actualice sus datos personales cuando sea necesario.</li>
+        <li>Respete los horarios y normas de la empresa.</li>
+    </ul>
+</div>
+
+
+<div class="info-box">
+    <h3>🌟 Frase Motivacional</h3>
+        <blockquote class="motivational-quote" id="motivational-quote">“El éxito es la suma de pequeños esfuerzos repetidos día tras día.”</blockquote>
+    
+        <style>
+        /* Frase motivacional */
+        .motivational-quote {
+            font-style: italic;
+            color: #00ffa3;
+        }
+        </style>
+</div>
+
+<div class="info-box">
+    <h3>📚 Glosario Interno</h3>
+    <ul>
+        <li><b>TI:</b> Tecnología de la Información.</li>
+        <li><b>CRM:</b> Gestión de Relaciones con Clientes.</li>
+        <li><b>KPI:</b> Indicador Clave de Desempeño.</li>
+        <li><b>GDPR:</b> Reglamento General de Protección de Datos.</li>
+        <li><b>VPN:</b> Red Privada Virtual.</li>
+    </ul>
+</div>
+
+
+<div class="info-box">
+    <h3>📋 Normas Rápidas</h3>
+    <ul>
+        <li>Salude y respete a sus compañeros.</li>
+        <li>Sea puntual en sus horarios y reuniones.</li>
+        <li>Mantenga limpio su espacio de trabajo.</li>
+        <li>Utilice lenguaje profesional en todo momento.</li>
+    </ul>
+</div>
+
+<div class="info-box">
+    <h3>🏅 Reconocimientos</h3>
+    <p>¡Felicidades al equipo por el esfuerzo colectivo y la dedicación diaria!</p>
+</div>
+
+<div class="info-box">
+    <h3>🗓️ Calendario del Mes</h3>
+    <div class="calendar-center">
+        <table class="calendar-table">
+            <tr><th>Lun</th><th>Mar</th><th>Mié</th><th>Jue</th><th>Vie</th><th>Sáb</th><th>Dom</th></tr>
+            <tr><td> </td><td> </td><td> </td><td>1</td><td>2</td><td>3</td><td>4</td></tr>
+            <tr><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td><td>10</td><td>11</td></tr>
+            <tr><td>12</td><td>13</td><td>14</td><td>15</td><td>16</td><td>17</td><td>18</td></tr>
+            <tr><td>19</td><td>20</td><td>21</td><td>22</td><td>23</td><td>24</td><td>25</td></tr>
+            <tr><td>26</td><td>27</td><td>28</td><td>29</td><td>30</td><td>31</td><td> </td></tr>
+        </table>
+    </div>
+</div>
+
+<div class="info-box">
+    <h3>❓ ¿Sabías qué?</h3>
+    <ul>
+        <li>La empresa promueve la innovación y el aprendizaje continuo.</li>
+        <li>El trabajo en equipo es uno de los valores fundamentales.</li>
+        <li>La seguridad de la información es responsabilidad de todos.</li>
+    </ul>
+</div>
+
+<div class="info-box">
+    <h3>⌨️ Atajos de Teclado Útiles</h3>
+    <ul>
+        <li><b>Ctrl + C / Ctrl + V</b>: Copiar y pegar.</li>
+        <li><b>Alt + Tab</b>: Cambiar entre ventanas abiertas.</li>
+        <li><b>Ctrl + Z</b>: Deshacer acción.</li>
+        <li><b>Win + L</b>: Bloquear el equipo.</li>
+    </ul>
+</div>
+
+<div class="info-box">
+    <h3>✅ Checklist de Rutina</h3>
+    <ul>
+        <li>Revisar correo al iniciar la jornada.</li>
+        <li>Actualizar agenda de tareas.</li>
+        <li>Participar en la reunión diaria.</li>
+        <li>Cerrar sesión al finalizar el día.</li>
+    </ul>
+</div>
+
+<div class="info-box">
+    <h3>🌈 Valores de la Empresa</h3>
+    <ul>
+        <li>Respeto</li>
+        <li>Innovación</li>
+        <li>Trabajo en equipo</li>
+        <li>Responsabilidad</li>
+        <li>Compromiso</li>
+    </ul>
+</div>
+
+<div class="info-box">
+    <h3>📰 Noticias Corporativas</h3>
+    <ul>
+        <li>Nuevo programa de bienestar laboral disponible.</li>
+        <li>Capacitaciones mensuales abiertas para inscripción.</li>
+        <li>Actualización de políticas internas publicada.</li>
+    </ul>
+</div>
+
+<div class="info-box">
+    <h3>☁️ Clima en Costa Rica</h3>
+    <div class="weather-visual" id="cr-weather">
+        <span class="weather-icon" id="weather-icon">🌤️</span>
+        <span id="weather-desc">Detectando ubicación y clima...</span>
+    </div>
+    <div class="text-xs text-gray-400 mt-1">El clima se ajusta según tu ubicación en Costa Rica.</div>
+</div>
+
+<div class="info-box">
+    <h3>📞 Contacto Rápido</h3>
+    <p>Para soporte técnico, llama al <b>+506 7032 4937</b> o dirígete al menú de ayuda.</p>
+</div>
+
+<div class="news-box">  
+    <h3>🚀 Novedades Internas</h3>  
+    <div class="news-carousel">  
+        <div class="news-card">🎯 Objetivo trimestral actualizado</div>  
+        <div class="news-card">💡 Nuevo protocolo de seguridad</div>  
+        <div class="news-card">📊 Reporte de desempeño mensual</div>  
+    </div>  
+</div>
+
+</div>  <script>  
+// Fondo animado  
+const canvas=document.getElementById('neuronCanvas'); const ctx=canvas.getContext('2d');  
+let width=canvas.width=window.innerWidth, height=canvas.height=window.innerHeight;  
+const neurons=Array.from({length:55},()=>({x:Math.random()*width,y:Math.random()*height,z:Math.random()*120,vx:(Math.random()-0.5)*0.7,vy:(Math.random()-0.5)*0.7,radius:Math.random()*3+1}));  
+function draw(){ ctx.fillStyle='#0a0f1a'; ctx.fillRect(0,0,width,height);  
+    neurons.forEach(n=>{ const scale=1+n.z/150; ctx.beginPath(); ctx.arc(n.x,n.y,n.radius*scale,0,Math.PI*2); ctx.fillStyle='#00ffa3'; ctx.fill(); });  
+    for(let i=0;i<neurons.length;i++){ for(let j=i+1;j<neurons.length;j++){  
+        let dx=neurons[i].x-neurons[j].x,dy=neurons[i].y-neurons[j].y,dz=neurons[i].z-neurons[j].z;  
+        let dist=Math.sqrt(dx*dx+dy*dy+dz*dz); if(dist<160){  
+            ctx.strokeStyle='rgba(0,255,163,'+(1-dist/160)+')'; ctx.lineWidth=1;  
+            ctx.beginPath(); ctx.moveTo(neurons[i].x,neurons[i].y); ctx.lineTo(neurons[j].x,neurons[j].y); ctx.stroke();  
+        }  
+    }}  
+    neurons.forEach(n=>{ n.x+=n.vx; n.y+=n.vy; if(n.x<0||n.x>width)n.vx*=-1; if(n.y<0||n.y>height)n.vy*=-1; });  
+    requestAnimationFrame(draw);  
+}  
+window.addEventListener('resize',()=>{ width=canvas.width=window.innerWidth; height=canvas.height=window.innerHeight; });  
+draw();  
+  
+// Hora y fecha  
+function updateTimeDate(){  
+    const now = new Date();  
+    const options = { weekday:'short', day:'2-digit', month:'short', year:'numeric' };  
+    document.getElementById('time').textContent = now.toLocaleTimeString('es-CR',{hour:'2-digit',minute:'2-digit'});  
+    document.getElementById('date').textContent = now.toLocaleDateString('es-CR', options);  
+}  
+setInterval(updateTimeDate,1000); updateTimeDate();  
+  
+// Mapa Costa Rica con geolocalización  
+const crCenter=[9.748917,-83.753428];  
+const map=L.map('crMap',{zoomControl:true, attributionControl:false}).setView(crCenter,7);  
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 }).addTo(map);  
+const bounds=L.latLngBounds([8.0, -86.0], [11.5, -82.5]);  
+map.setMaxBounds(bounds.pad(0.1)); map.on('drag',()=>map.panInsideBounds(bounds));  
+if(navigator.geolocation){  
+    navigator.geolocation.getCurrentPosition(pos=>{  
+        const userLatLng=[pos.coords.latitude,pos.coords.longitude];  
+        map.setView(userLatLng,10);  
+        L.marker(userLatLng).addTo(map).bindPopup("Tú estás aquí").openPopup();  
+    }, err=>{ console.warn("Permiso de ubicación denegado o no disponible. Centrado en CR."); });  
+} else { console.warn("Geolocalización no soportada. Centrado en CR."); }  
+</script>
+<script>
+// Frases motivacionales para rotar
+const motivationalPhrases = [
+    "El éxito es la suma de pequeños esfuerzos repetidos día tras día.",
+    "La disciplina es el puente entre metas y logros.",
+    "No cuentes los días, haz que los días cuenten.",
+    "La actitud es una pequeña cosa que hace una gran diferencia.",
+    "El único modo de hacer un gran trabajo es amar lo que haces.",
+    "El futuro depende de lo que hagas hoy.",
+    "Nunca es tarde para ser quien podrías haber sido.",
+    "La constancia vence lo que la dicha no alcanza.",
+    "El trabajo en equipo divide el esfuerzo y multiplica los resultados.",
+    "El único límite a nuestros logros de mañana está en nuestras dudas de hoy.",
+    "Hazlo con pasión o no lo hagas.",
+    "El éxito no es la clave de la felicidad. La felicidad es la clave del éxito.",
+    "La mejor manera de predecir el futuro es crearlo.",
+    "No busques los errores, busca el remedio.",
+    "El aprendizaje es un tesoro que seguirá a su dueño a todas partes.",
+    "La perseverancia es el trabajo duro que haces después de cansarte del trabajo duro que ya hiciste.",
+    "El talento gana juegos, pero el trabajo en equipo y la inteligencia ganan campeonatos.",
+    "El único lugar donde el éxito viene antes que el trabajo es en el diccionario.",
+    "La creatividad es la inteligencia divirtiéndose.",
+    "El optimismo es la fe que conduce al logro.",
+    "No hay secretos para el éxito. Este se alcanza preparándose, trabajando arduamente y aprendiendo del fracaso.",
+    "La motivación nos impulsa a comenzar y el hábito nos permite continuar.",
+    "El mayor placer en la vida es hacer lo que la gente dice que no puedes hacer.",
+    "El éxito es la suma de detalles bien hechos.",
+    "La diferencia entre lo ordinario y lo extraordinario es ese pequeño extra.",
+    "El único modo de hacer un gran trabajo es amar lo que haces.",
+    "El fracaso es solo la oportunidad de comenzar de nuevo con más inteligencia.",
+    "La clave del éxito es empezar antes de estar listo.",
+    "La mejor forma de empezar es dejar de hablar y comenzar a hacer.",
+    "El trabajo duro supera al talento cuando el talento no trabaja duro.",
+    "No te detengas cuando estés cansado, detente cuando hayas terminado.",
+    "El éxito no es para los que piensan que pueden hacer algo, sino para quienes lo hacen.",
+    "La confianza en uno mismo es el primer secreto del éxito.",
+    "El único lugar donde el éxito viene antes que el trabajo es en el diccionario.",
+    "El éxito es la suma de pequeños esfuerzos repetidos día tras día.",
+    "La perseverancia no es una carrera larga; son muchas carreras cortas una tras otra.",
+    "El entusiasmo mueve el mundo.",
+    "El éxito es la habilidad de ir de fracaso en fracaso sin perder el entusiasmo.",
+    "La mejor manera de hacer algo es dejar de hablar de ello y hacerlo.",
+    "El secreto para salir adelante es comenzar.",
+    "El éxito no es la clave de la felicidad. La felicidad es la clave del éxito.",
+    "El único modo de hacer un gran trabajo es amar lo que haces.",
+    "La motivación es lo que te pone en marcha, el hábito es lo que hace que sigas.",
+    "El éxito es la suma de pequeños esfuerzos repetidos día tras día.",
+    "La disciplina es el puente entre metas y logros.",
+    "No cuentes los días, haz que los días cuenten.",
+    "La actitud es una pequeña cosa que hace una gran diferencia.",
+    "El futuro depende de lo que hagas hoy.",
+    "Nunca es tarde para ser quien podrías haber sido.",
+    "La constancia vence lo que la dicha no alcanza.",
+    "El trabajo en equipo divide el esfuerzo y multiplica los resultados.",
+    "El único límite a nuestros logros de mañana está en nuestras dudas de hoy.",
+    "Hazlo con pasión o no lo hagas.",
+    "El éxito no es la clave de la felicidad. La felicidad es la clave del éxito.",
+    "La mejor manera de predecir el futuro es crearlo.",
+    "No busques los errores, busca el remedio.",
+    "El aprendizaje es un tesoro que seguirá a su dueño a todas partes.",
+    "La perseverancia es el trabajo duro que haces después de cansarte del trabajo duro que ya hiciste.",
+    "El talento gana juegos, pero el trabajo en equipo y la inteligencia ganan campeonatos.",
+    "El único lugar donde el éxito viene antes que el trabajo es en el diccionario.",
+    "La creatividad es la inteligencia divirtiéndose.",
+    "El optimismo es la fe que conduce al logro.",
+    "No hay secretos para el éxito. Este se alcanza preparándose, trabajando arduamente y aprendiendo del fracaso.",
+    "La motivación nos impulsa a comenzar y el hábito nos permite continuar.",
+    "El mayor placer en la vida es hacer lo que la gente dice que no puedes hacer.",
+    "El éxito es la suma de detalles bien hechos.",
+    "La diferencia entre lo ordinario y lo extraordinario es ese pequeño extra.",
+    "El único modo de hacer un gran trabajo es amar lo que haces.",
+    "El fracaso es solo la oportunidad de comenzar de nuevo con más inteligencia.",
+    "La clave del éxito es empezar antes de estar listo.",
+    "La mejor forma de empezar es dejar de hablar y comenzar a hacer.",
+    "El trabajo duro supera al talento cuando el talento no trabaja duro.",
+    "No te detengas cuando estés cansado, detente cuando hayas terminado.",
+    "El éxito no es para los que piensan que pueden hacer algo, sino para quienes lo hacen.",
+    "La confianza en uno mismo es el primer secreto del éxito.",
+    "El único lugar donde el éxito viene antes que el trabajo es en el diccionario.",
+    "El éxito es la suma de pequeños esfuerzos repetidos día tras día.",
+    "La perseverancia no es una carrera larga; son muchas carreras cortas una tras otra.",
+    "El entusiasmo mueve el mundo.",
+    "El éxito es la habilidad de ir de fracaso en fracaso sin perder el entusiasmo.",
+    "La mejor manera de hacer algo es dejar de hablar de ello y hacerlo.",
+    "El secreto para salir adelante es comenzar."
+];
+let phraseIndex = 0;
+setInterval(() => {
+        phraseIndex = (phraseIndex + 1) % motivationalPhrases.length;
+        document.getElementById('motivational-quote').textContent = motivationalPhrases[phraseIndex];
+}, 10000);
+
+// Widget de clima para Costa Rica (estructura visual, sin datos reales)
+if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(function(pos) {
+        // Aquí se podría usar una API real de clima con pos.coords.latitude y longitude
+        document.getElementById('weather-icon').textContent = '🌦️';
+        document.getElementById('weather-desc').textContent = 'Clima de Costa Rica detectado (ejemplo visual)';
+    }, function() {
+        document.getElementById('weather-icon').textContent = '🌤️';
+        document.getElementById('weather-desc').textContent = 'No se pudo detectar ubicación, mostrando clima general.';
+    });
+}
+</script>  </body>  
+</html>

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login Principal - AJHBEmployeeSystem</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins', sans-serif; }
+html, body { width:100%; height:100%; background:#0a0f1a; overflow:hidden; }
+#neuronCanvas { position:absolute; top:0; left:0; width:100%; height:100%; z-index:0; }
+
+.login-container { position:relative; z-index:1; width:90%; max-width:400px; padding:50px 30px; background: rgba(0,0,0,0.35); border-radius:18px; margin:auto; top:50%; transform:translateY(-50%); box-shadow:0 0 35px rgba(0,255,163,0.25); color:#fff; text-align:center; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border:1px solid rgba(0,255,163,0.2); perspective:900px; transform-style: preserve-3d; transition: transform 0.1s ease-out; }
+.login-container h1 { font-size:2.3em; letter-spacing:1px; color:#00ffa3; animation: neonPulse 2s infinite alternate; margin-bottom:10px; text-shadow: 0 0 5px #00ffa3,0 0 15px #00ffa3,0 0 25px #00ffa3; }
+@keyframes neonPulse { 0%{text-shadow:0 0 5px #00ffa3,0 0 12px #00ffa3,0 0 20px #00ffa3; transform:translateY(0);} 50%{text-shadow:0 0 8px #00ffa3,0 0 20px #00ffa3,0 0 35px #00ffa3; transform:translateY(-2px);} 100%{text-shadow:0 0 5px #00ffa3,0 0 12px #00ffa3,0 0 20px #00ffa3; transform:translateY(0);} }
+.login-container h2 { font-size:1.25em; font-weight:600; margin-bottom:30px; background: linear-gradient(90deg,#00ffa3,#26ff7f,#00ffa3); background-size:200% 100%; -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; animation: shimmer 3s infinite linear; letter-spacing:1px; }
+@keyframes shimmer { 0%{background-position:-200% 0;} 100%{background-position:200% 0;} }
+.login-container input { width:100%; padding:16px 14px; margin-bottom:22px; border-radius:10px; border:2px solid rgba(0,255,163,0.3); background: rgba(27,31,46,0.35); color:#fff; font-size:1em; font-weight:500; outline:none; box-shadow: inset 0 0 10px rgba(0,255,163,0.2); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); transition:0.4s; }
+.login-container input::placeholder { color:#bbb; letter-spacing:0.5px; }
+.login-container input:focus { border-color:#26ff7f; box-shadow:0 0 16px rgba(38,255,127,0.4); background: rgba(27,31,46,0.5); }
+.login-container button { width:100%; padding:16px; border-radius:10px; border:none; background: rgba(38,255,127,0.45); color:#0a0f1a; font-size:1.05em; font-weight:600; cursor:pointer; transition:0.3s; box-shadow:0 0 15px rgba(38,255,127,0.25); animation: buttonGlow 2s infinite alternate; }
+.login-container button:hover { background: rgba(38,255,127,0.65); }
+@keyframes buttonGlow { 0% { box-shadow:0 0 12px rgba(38,255,127,0.25);} 100% { box-shadow:0 0 28px rgba(38,255,127,0.45);} }
+@keyframes shake { 0%, 100% { transform: translateY(-50%) translateX(0); } 25% { transform: translateY(-50%) translateX(-5px); } 75% { transform: translateY(-50%) translateX(5px); } }
+.login-container .copyright { text-align:center; margin-top:20px; font-size:0.8em; color:#aaa; }
+
+#chatbotBtn { position: fixed; bottom: 25px; right: 25px; z-index:100; width:55px; height:55px; border-radius:50%; background: linear-gradient(145deg,#00ffa3,#26ff7f); border:none; cursor:pointer; box-shadow:0 0 20px rgba(0,255,163,0.7); display:flex; justify-content:center; align-items:center; color:#0a0f1a; font-weight:700; font-size:1.3em; font-family:'Roboto Mono', monospace; transition:0.3s; }
+#chatbotBtn:hover { box-shadow:0 0 30px rgba(0,255,163,1); transform: scale(1.15); }
+#chatModal { position: fixed; top:50%; left:50%; transform: translate(-50%,-50%) scale(0); width:75%; max-width:380px; height:60%; background: rgba(0,0,0,0.9); border-radius:15px; box-shadow:0 0 35px rgba(0,255,163,0.5); display:flex; flex-direction:column; transition: transform 0.3s ease-out; z-index:101; overflow:hidden; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+#chatModal.show { transform: translate(-50%,-50%) scale(1); }
+#chatHeader { background:#00ffa3; color:#0a0f1a; padding:14px; font-weight:700; display:flex; justify-content:space-between; align-items:center; font-family:'Roboto Mono', monospace; }
+#chatHeader button { background:none; border:none; font-size:1.2em; cursor:pointer; }
+#chatBody { flex:1; padding:12px; overflow-y:auto; font-family:'Roboto Mono', monospace; display:flex; flex-direction:column; }
+.message { margin:8px 0; padding:10px 14px; border-radius:12px; max-width:75%; word-wrap:break-word; font-size:0.95em; }
+.user { background:#26ff7f; color:#0a0f1a; align-self:flex-end; border-bottom-right-radius:2px; }
+.bot { background:#00ffa3; color:#0a0f1a; align-self:flex-start; border-bottom-left-radius:2px; }
+#chatInputContainer { display:flex; border-top:1px solid rgba(38,255,127,0.3); }
+#chatInputContainer input { flex:1; padding:10px; border:none; outline:none; background: rgba(27,31,46,0.6); color:#fff; font-size:0.95em; font-family:'Roboto Mono', monospace; }
+#chatInputContainer button { padding:10px; border:none; background:#26ff7f; color:#0a0f1a; cursor:pointer; font-weight:700; transition:0.3s; }
+#chatInputContainer button:hover { background:#00ffa3; }
+</style>
+</head>
+<body>
+
+<canvas id="neuronCanvas"></canvas>
+
+<div class="login-container" id="loginContainer">
+    <h1>Login</h1>
+    <h2>AJHB Employee System</h2>
+    <input type="text" placeholder="Usuario" id="username">
+    <input type="password" placeholder="Contraseña" id="password" onkeypress="if(event.key==='Enter') login()">
+    <button onclick="login()">Entrar</button>
+    <div class="copyright">© 2025 Derechos reservados para AJHB Real State</div>
+</div>
+
+<button id="chatbotBtn">💬</button>
+
+<div id="chatModal">
+    <div id="chatHeader">Soporte <button onclick="closeChat()">✖</button></div>
+    <div id="chatBody">
+        <div class="message bot">Bienvenido al soporte de AJHB Employee System.</div>
+    </div>
+    <div id="chatInputContainer">
+        <input type="text" placeholder="Escribe tu mensaje..." id="chatInput">
+        <button onclick="sendMessage()">Enviar</button>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<script>
+// Canvas y login tilt
+const canvas=document.getElementById('neuronCanvas');const ctx=canvas.getContext('2d');let width=canvas.width=window.innerWidth;let height=canvas.height=window.innerHeight;
+const neurons=Array.from({length:55},()=>({x:Math.random()*width,y:Math.random()*height,z:Math.random()*120,vx:(Math.random()-0.5)*0.7,vy:(Math.random()-0.5)*0.7,radius:Math.random()*3+1}));
+function draw(){ctx.fillStyle='#0a0f1a';ctx.fillRect(0,0,width,height);neurons.forEach(n=>{const scale=1+n.z/150;ctx.beginPath();ctx.arc(n.x,n.y,n.radius*scale,0,Math.PI*2);ctx.fillStyle='#00ffa3';ctx.fill();});
+for(let i=0;i<neurons.length;i++){for(let j=i+1;j<neurons.length;j++){let dx=neurons[i].x-neurons[j].x,dy=neurons[i].y-neurons[j].y,dz=neurons[i].z-neurons[j].z;let dist=Math.sqrt(dx*dx+dy*dy+dz*dz);if(dist<160){ctx.strokeStyle='rgba(0,255,163,'+(1-dist/160)+')';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(neurons[i].x,neurons[i].y);ctx.lineTo(neurons[j].x,neurons[j].y);ctx.stroke();}}}
+neurons.forEach(n=>{n.x+=n.vx;n.y+=n.vy;if(n.x<0||n.x>width)n.vx*=-1;if(n.y<0||n.y>height)n.vy*=-1;});requestAnimationFrame(draw);}
+const loginContainer=document.getElementById('loginContainer');function handleTilt(e){const x=e.gamma/20;const y=e.beta/20;loginContainer.style.transform=`translateY(-50%) rotateX(${y}deg) rotateY(${x}deg)`;}
+window.addEventListener('deviceorientation',handleTilt);
+window.addEventListener('mousemove',e=>{const x=(e.clientX-width/2)/50;const y=(e.clientY-height/2)/50;loginContainer.style.transform=`translateY(-50%) rotateX(${y}deg) rotateY(${x}deg)`;});
+window.addEventListener('resize',()=>{width=canvas.width=window.innerWidth;height=canvas.height=window.innerHeight;});
+draw();
+
+// Login - Credenciales del sistema principal AJHB
+const validCredentials = {
+    "Montana@AJHB.com": "DirectorTI2025!",
+    "Vargas@AJHB.com": "Comercio42#", 
+    "Arreondo@AJHB.com": "TechIT20",
+    "montoya@AJHB.com": "MontoyaPrincipal89$",
+    "Andres@AJHB.com": "Adminandres76",
+    "Yasser@AJHB.com": "ContayasserAJHB",
+    "Hidalgo@AJHB.com": "Ejecutivo1ajhb*",
+    "Bustos@AJHB.com": "CrisisAJHB23",
+    "Martinez@AJHB.com": "AsistenteGral2025*"
+};
+
+// Sistema de notificaciones mejoradas
+function showNotification(type, title, message) {
+    // Remover notificaciones anteriores
+    const existing = document.querySelector('.notification');
+    if (existing) existing.remove();
+    
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    
+    const colors = {
+        success: { bg: 'rgba(0, 255, 163, 0.9)', border: '#00ffa3', icon: '✅' },
+        error: { bg: 'rgba(255, 50, 50, 0.9)', border: '#ff3232', icon: '❌' },
+        warning: { bg: 'rgba(255, 165, 0, 0.9)', border: '#ffa500', icon: '⚠️' }
+    };
+    
+    notification.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: ${colors[type].bg};
+            color: #0a0f1a;
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            border: 2px solid ${colors[type].border};
+            z-index: 10000;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            text-align: center;
+            min-width: 300px;
+            animation: slideIn 0.3s ease-out;
+        ">
+            <div style="font-size: 2em; margin-bottom: 10px;">${colors[type].icon}</div>
+            <div style="font-size: 1.2em; margin-bottom: 5px;">${title}</div>
+            <div style="font-size: 0.9em; opacity: 0.8;">${message}</div>
+        </div>
+        <style>
+            @keyframes slideIn {
+                from { opacity: 0; transform: translate(-50%, -60%); }
+                to { opacity: 1; transform: translate(-50%, -50%); }
+            }
+        </style>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remover después de 3 segundos
+    setTimeout(() => {
+        if (notification) {
+            notification.style.opacity = '0';
+            notification.style.transform = 'translate(-50%, -40%)';
+            setTimeout(() => notification.remove(), 300);
+        }
+    }, 3000);
+}
+
+function login(){ 
+    const user = document.getElementById('username').value.trim(); 
+    const pass = document.getElementById('password').value;
+    
+    // Validar que no estén vacíos
+    if (!user || !pass) {
+        showNotification('warning', 'Campos Incompletos', 'Por favor complete todos los campos requeridos');
+        return;
+    }
+    
+    // Verificar credenciales
+    if (validCredentials.hasOwnProperty(user) && validCredentials[user] === pass) {
+        // Login exitoso
+        localStorage.setItem('ajhb_session', JSON.stringify({
+            user: user.split('@')[0],
+            email: user,
+            time: new Date().toISOString(),
+            authenticated: true
+        }));
+        
+        showNotification('success', '¡Acceso Autorizado!', `Bienvenido ${user.split('@')[0]} al sistema AJHB`);
+        
+        // Redireccionar al dashboard
+        setTimeout(() => {
+            window.location.href = 'dashboard.html';
+        }, 2000);
+    } else {
+        showNotification('error', 'Acceso Denegado', 'Credenciales incorrectas. Verifique su usuario y contraseña');
+        document.getElementById('password').value = '';
+        
+        // Efecto de shake en el formulario
+        const loginContainer = document.getElementById('loginContainer');
+        loginContainer.style.animation = 'shake 0.5s ease-in-out';
+        setTimeout(() => {
+            loginContainer.style.animation = '';
+        }, 500);
+    }
+}
+
+// Chatbot
+const chatbotBtn=document.getElementById('chatbotBtn');const chatModal=document.getElementById('chatModal');chatbotBtn.addEventListener('click',()=>{chatModal.classList.add('show');});function closeChat(){chatModal.classList.remove('show');}
+
+// Cifrado extremo: AES256 + Base64 + XOR + HMAC
+const AES_KEY="ajhb_supersecretkey1234567890"; 
+const XOR_KEY=42;
+const HMAC_KEY="ajhb_hmac_key";
+
+function encryptMessage(msg){
+    // 1. AES
+    let encrypted=CryptoJS.AES.encrypt(msg,AES_KEY).toString();
+    // 2. Base64
+    encrypted=btoa(encrypted);
+    // 3. XOR
+    let xorStr="";
+    for(let i=0;i<encrypted.length;i++){xorStr+=String.fromCharCode(encrypted.charCodeAt(i)^XOR_KEY);}
+    // 4. HMAC
+    const hmac=CryptoJS.HmacSHA256(xorStr,HMAC_KEY).toString();
+    return xorStr+"|"+hmac;
+}
+
+async function sendMessage(){
+    const input=document.getElementById('chatInput'); if(input.value.trim()==='') return;
+    const body=document.getElementById('chatBody');
+    const userMsg=document.createElement('div'); userMsg.classList.add('message','user'); userMsg.textContent=input.value; body.appendChild(userMsg); body.scrollTop=body.scrollHeight;
+    
+    const prompt=input.value; input.value='';
+    
+    // cifrar mensaje
+    const cipherMsg=encryptMessage(prompt);
+    
+    try{
+        const res=await fetch("https://api.deepseek.com/v1/chat",{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json",
+                "Authorization":"Bearer sk-98f99680836e442faeea98e0a4c65991"
+            },
+            body: JSON.stringify({ message:cipherMsg })
+        });
+        const data=await res.json();
+        const botResp=data.response || "Soporte: no pude responder ahora.";
+        const botMsg=document.createElement('div'); botMsg.classList.add('message','bot'); botMsg.textContent=botResp; body.appendChild(botMsg); body.scrollTop=body.scrollHeight;
+    }catch(err){
+        const botMsg=document.createElement('div'); botMsg.classList.add('message','bot'); botMsg.textContent="Soporte: no pude responder ahora."; body.appendChild(botMsg); body.scrollTop=body.scrollHeight;
+    }
+}
+</script>
+</body>
+</html>
